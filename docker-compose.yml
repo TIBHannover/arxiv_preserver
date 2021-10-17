@@ -30,6 +30,7 @@ services:
       - POSTGRES_DB=arxiv
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+      - PGDATA=/var/lib/postgresql/data/data/
 
   arxiv:
     image: iart/arxiv

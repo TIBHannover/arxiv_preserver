@@ -1,0 +1,87 @@
+{% for paper in paper_list %} {% with index=paper %}{% with paper=paper.paper %}
+<li class="list-group-item paper paper-{{ paper.id }}">
+  <!-- {% if user.is_authenticated %}
+  <div class="watchlist">
+
+    <a onmousedown="ET_Event.eventStart('Button', 'Von Merkliste entfernen', 'Klick', '')" title="Von Merkliste entfernen" onclick="toggleDocument('TIBKAT:181053411', 1, {&quot;query&quot;:&quot;interactive&quot;,&quot;cnt&quot;:20,&quot;searchspace&quot;:&quot;tibub&quot;});"
+      href="javascript:void(0);">&nbsp;</a>
+
+  </div>
+  {% endif %} -->
+
+
+  <div class="header">
+
+    <div class="metabox">
+      <div class="title">
+        <h3 class="title"><a href="{{ paper.html_url }}">{{ paper.title }}</a> <span class='id' target="{{ paper.paper_id }}">({{ paper.paper_id }})</span> </h3>
+      </div>
+      <div class="author">
+        {% for author in paper.authors.all %}<a href="{% url 'index'  %}?author={{ author.name }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+      </div>
+      <div class="meta"> {{ paper.last_version.date }} {% for cat in paper.categories.all %}
+        <a href="{% url 'index'  %}?category={{ cat.name }}">{{ cat.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+      </div>
+    </div>
+
+    <div class="action float-right">
+
+      <div class="btn-group-horizontal" role="group" aria-label="action group">
+        <button type="button" class="btn btn-outline-secondary history-back-btn hide" onclick="javascript:history.back()" title="go back"><i class="fa fa-arrow-left"></i></button>
+        <button id="{{ paper.hash }}-library-btn" type="button" class="btn btn-outline-secondary" onclick="toggle_library('{{ paper.hash }}', '#{{ paper.hash }}-library-btn')" {% if not user.is_authenticated %} disabled{% endif %}>
+          </button>
+        <script>
+          $('{{ paper.hash }}-library-btn').ready(function() {
+            in_library('{{ paper.hash }}', '#{{ paper.hash }}-library-btn');
+          });
+        </script>
+        <button type="button" class="btn btn-outline-secondary" href="{{ paper.pdf_url }}" onclick="download_pdf('{{ paper.hash }}', '{{ paper.pdf_url }}')">
+  				<i class="fas fa-download"></i></i>
+  			</button>
+        <button type="button" class="btn btn-outline-secondary" href="" onclick="showPDFViewer('{{ paper.pdf_url }}', '0')"><i class="fas fa-file-pdf"></i></button>
+      </div>
+    </div>
+
+
+  </div>
+
+
+  <div class="preview">
+    {% if paper.png_exists %} {% for x in preview_range %}
+    <a href="#" class="" imgNumb="{{x}}">
+      <img src="{{ paper.preview_url }}/{{ x }}.png" onerror="javascript:this.style.display='none'" class="img-thumbnail float-left preview" alt="..." onclick="showPDFViewer('{{ paper.pdf_url }}', '{{x}}')">  {% endfor%}{% else %}  {% endif %}
+    </a>
+  </div>
+  <div class="clearfix"></div>
+  <div class="summary">{{ paper.summary }}</div>
+
+  <div class="clearfix"></div>
+  <div class="social">
+    <div class="btn-group-horizontal" role="group" aria-label="group">
+      <button type="button" class="btn btn-outline-secondary twitter
+social-{{ paper.id }}" onclick="toggle_twitter('{{ paper.id }}')" {% if not index.tweet_count %} disabled {% endif %}><i class="fab fa-twitter-square"></i> Twitter <span class="badge badge-dark">{% if not index.tweet_count %}0{% else %}{{ index.tweet_count }}{% endif %}</span></button>
+      <button type="button" class="btn btn-outline-secondary github
+social-{{ paper.id }}" onclick="toggle_github('{{ paper.id }}')" disabled><i class="fab fa-github-square"></i> GitHub <span class="badge badge-dark">0</span></button>
+      <button type="button" class="btn btn-outline-secondary reddit
+social-{{ paper.id }}" onclick="toggle_reddit('{{ paper.id }}')" disabled><i class="fab fa-reddit-square"></i> Reddit <span class="badge badge-dark">0</span></button>
+    </div>
+
+    <div class="content">
+      <div class="clearfix"></div>
+      <div class="twitter collapse">
+      </div>
+      <div class="clearfix"></div>
+      <div class="github collapse">
+      </div>
+      <div class="clearfix"></div>
+      <div class="reddit collapse">
+      </div>
+
+    </div>
+    <div class="clearfix"></div>
+    <div class="next text-center">
+
+    </div>
+  </div>
+</li>
+{% endwith %} {% endwith %} {% endfor %}

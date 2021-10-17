@@ -1,0 +1,7 @@
+Django==3.2
+elasticsearch==7.12.1
+elasticsearch-dsl==7.3.0
+mysqlclient
+python-dateutil==2.8.1
+sqlparse==0.4.1
+psycopg2-binary

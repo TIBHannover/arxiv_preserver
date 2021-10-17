@@ -1,0 +1,8 @@
+{% for tweet in paper.tweet_set.all %}
+<div class="media">
+  <img class="d-flex mr-3" src="{{ tweet.user_image }}" alt="Generic placeholder image">
+  <div class="media-body">
+    <h5 class="mt-0">{{ tweet.user_name}}</h5> {{ tweet.text }}
+  </div>
+</div>
+{% endfor %}

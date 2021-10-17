@@ -1,0 +1,232 @@
+{% extends "sanity/base.html" %} {% block content %} {% load static %}
+<script>
+  /* beautify preserve:start */
+  var pdf_viewer_url = "{% static 'pdf-js/web/viewer.html' %}";
+  /* beautify preserve:end */
+  function toggle_library(paper_hash, button_id) {
+    $.ajax({
+      url: '{% url "toggle_library" %}',
+      data: {
+        'paper_hash': paper_hash
+      },
+      contentType: 'application/x-www-form-urlencoded',
+      dataType: 'json',
+      type: 'POST',
+      success: function(data) {
+        if (data.status == "ok") {
+          if (data.state == "in") {
+            $(button_id).html("<i class='fas fa-star'></i>");
+          } else {
+            $(button_id).html("<i class='far fa-star'></i>");
+          }
+          update_user(data.user_info);
+        }
+      }
+    });
+  }
+
+  function in_library(paper_hash, button_id) {
+    $.ajax({
+      url: '{% url "in_library" %}',
+      data: {
+        'paper_hash': paper_hash
+      },
+      contentType: 'application/x-www-form-urlencoded',
+      dataType: 'json',
+      type: 'POST',
+      success: function(data) {
+        if (data.status == "ok") {
+          if (data.state == "in") {
+            $(button_id).html("<i class='fas fa-star'></i>");
+          } else {
+            $(button_id).html("<i class='far fa-star'></i>");
+          }
+        }
+      }
+    });
+  }
+
+  function download_pdf(paper_hash, paper_url) {
+    window.location.href = paper_url;
+  }
+
+  /* beautify preserve:start */
+  {% if paper_list.has_next %}
+  var next_page_number = {{ paper_list.next_page_number }}
+  var next_page_content = null
+  {% else %}
+  var next_page_number = null
+  var next_page_content = null
+  {% endif %}
+  /* beautify preserve:end */
+
+  function load_next_page(callback) {
+    $.ajax({
+      url: '{% url "index" %}',
+      data: {
+        'query': JSON.stringify(query),
+        'page': next_page_number
+      },
+      contentType: 'application/x-www-form-urlencoded',
+      dataType: 'json',
+      type: 'POST',
+      success: callback
+    });
+  }
+
+
+  function next_page() {
+    // load precache
+    if (next_page_content == null && next_page_number != null) {
+      load_next_page(function(data) {
+        if (data.status == "ok") {
+          next_page_number = data.next_page_number;
+          next_page_content = data.content;
+        }
+      });
+      next_page_number = null;
+    }
+    // show precache
+    else {
+      if (next_page_content != null) {
+        $('#list-view').append(next_page_content)
+        next_page_content = null;
+        // update_user(data.user_info);
+        bind_img_error();
+      }
+      // load next page
+      if (next_page_number != null) {
+        load_next_page(function(data) {
+          if (data.status == "ok") {
+            next_page_number = data.next_page_number;
+            next_page_content = data.content;
+          }
+        });
+        next_page_number = null;
+      }
+    }
+  }
+
+  var scroll_listener = function() {
+    $(window).on("wheel", function(e) {
+      var delta = e.originalEvent.deltaY;
+      if (delta > 0) {
+        if ($(window).scrollTop() >= $(document).height() - $(window).height() - 1000) {
+          next_page()
+        }
+      }
+      // setTimeout(scroll_listener, 200); //rebinds itself after 200ms
+
+      /* add search btn when user scrolls */
+      $(".search-btn").fadeIn(500);
+      if ($(window).scrollTop() == 0) $(".search-btn").hide();
+    });
+  };
+
+	function slideRight(hideElem, showElem) {
+			$(hideElem).hide();
+			$("#displaySwitcher").hide();
+			$(showElem).parent().attr('class', 'col-sm-12');
+			$(showElem).show();
+			setScrollPos();
+	}
+
+	function slideLeft(hideElem, showElem) {
+			$(hideElem).hide();
+			$("#list-view").parent().attr("class", "col-sm-12");
+			$(showElem).attr('class', 'col-sm-12');
+			$(showElem).show();
+			$("#btn2Left").hide();
+			$(".changeView").hide();
+	}
+
+	function showPDFViewer(url, pageNumber) {
+			var lS = Cookies.get("leftSize");
+			var rS = Cookies.get("rightSize");
+			var heightV = $(window).height()-200;
+			// alert(heightV);
+			$("#displaySwitcher").show();
+			$("#content").css("margin-top", "30px");
+			$("#iframeBox").fadeIn(2000);
+			pageNumber = parseInt(pageNumber)+1;
+			console.log(pageNumber);
+			$("#list-view").parent().attr("class", "col-sm-"+lS);
+			// $("#displaySwitcher").attr("class", "col-sm-12").fadeIn(1000);
+			$("#iframeBox").attr("class", "col-sm-"+rS).css("top", "157px").html('<iframe src="'+ pdf_viewer_url  +'?file='+url+'.pdf#page='+pageNumber+'" width="100%" height="'+ heightV +'" id="frameDemo"></iframe>')
+			$("#btn2Right").fadeIn();
+			$("#btn2Left").fadeIn();
+			$(".changeView").fadeIn(1000);
+			// setScrollPos();
+	}
+
+	function changeView(leftSize, rightSize) {
+			Cookies.set("leftSize", leftSize);
+			Cookies.set("rightSize", rightSize);
+			$("#list-view").parent().attr("class", "col-sm-"+leftSize);
+			$("#iframeBox").attr("class", "col-sm-"+rightSize);
+			// setScrollPos();
+	}
+
+	function setScrollPos() {
+			var scrollPos = Cookies.get("scrollPos") - 200;
+			// alert( scrollPos );
+			$(window).scrollTop(scrollPos);
+			// $("html, body").animate({ scrollTop: $('#title1').offset().top }, 1000);
+	}
+
+
+
+  $(document).ready(function() {
+    // bind listner
+    scroll_listener();
+    // preload the next page
+    if (next_page_number != null && next_page_content == null) {
+      next_page();
+    }
+
+		if(Cookies.get("leftSize") == '' && Cookies.get("rightSize") == '') {
+			var lS = Cookies.set("leftSize", 4);
+			var rS = Cookies.set("rightSize", 8);
+		}
+
+		$(window).scroll(function(){
+    	var scrollPos = $(window).scrollTop();
+			Cookies.set("scrollPos", scrollPos);
+    	console.log(scrollPos);
+		});
+
+		// $(window).scrollTop(2000);
+
+
+  });
+</script>
+
+<div class="container-fluid">
+	<div class="row">
+		<div id="displaySwitcher" class="col-sm-3" style="display:none">
+			<a href="#" id="btn2Left" onclick="slideLeft('#list-view', '#iframeBox')" title="show pdfViewer" > <i class="fas fa-arrow-left"></i> </a>
+			<a href="#" class="changeView" onclick="changeView(2, 10)" title="1:5" >1:5</a>
+			<a href="#" class="changeView" onclick="changeView(4, 8)" title="2:3" >2:3</a>
+			<a href="#" class="changeView" onclick="changeView(6, 6)" title="1:1" >1:1</a>
+			<a href="#" class="changeView" onclick="changeView(8, 4)" title="3:2" >3:2</a>
+			<a href="#" class="changeView" onclick="changeView(10, 2)" title="5:1" >5:1</a>
+			<a href="#" id="btn2Right" onclick="slideRight('#iframeBox', '#list-view')" title="show list view"> <i class="fas fa-arrow-right"></i> </a> <br />
+		</div>
+	</div>
+
+	<div id="content" class="row">
+		<div class="col-sm-12">
+			<ul id="list-view" class="list-group">
+				{% include 'sanity/paper_list_content.html' %}
+
+			</ul>
+		</div>
+
+		<div id="iframeBox" class="" style="position:fixed; right:0;"></div>
+	</div>
+
+</div>
+
+
+
+{% endblock %}

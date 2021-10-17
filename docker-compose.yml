@@ -1,0 +1,56 @@
+version: "2.0"
+services:
+  elasticsearch:
+    image: elasticsearch:7.9.1
+
+    network_mode: "host"
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+
+    volumes:
+      - type: bind
+        # TODO change path
+        source: ./es
+        target: /usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65530
+        hard: 65530
+
+  postgres:
+    image: postgres:13.2
+    network_mode: "host"
+    volumes:
+      - ./db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=arxiv
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
+  arxiv:
+    image: iart/arxiv
+    build:
+      context: ./
+
+    network_mode: "host"
+    volumes:
+      - type: bind
+        source: ./media
+        target: /media
+      # - type: bind
+      #   source: ./
+      #   target: /arxiv
+
+    working_dir: /arxiv/
+    environment:
+      - POETRY_VIRTUALENVS_CREATE=False
+      - PYTHONPATH=/arxiv/
+    command: python3 manage.py runserver  0.0.0.0:80
+
+    depends_on:
+      - postgres
+      - elasticsearch
